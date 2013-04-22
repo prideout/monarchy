@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <title>monarchy</title>
+    <meta charset="utf-8">
+    <meta name="author" content="Philip Rideout">
+    <link rel="shortcut icon" href="http://prideout.net/favicon.ico">
+    <link href="style.css" rel="stylesheet">
+    <script src="lib/yepnope.js"></script>
+    <script src="project.js"></script>
+  </head>
+
+  <body>
+
+    <div class="container" style="display:none">
+      <h1>
+        monarchy
+        <i id="refresh" class="icon-refresh"></i>
+      </h1>
+      
+      <div id="pattern" class="pattern">
+        <canvas width="1920" height="960" class="landscape" />
+      </div>
+      <div id="markdown-container">
+      </div>
+    </div>
+
+    <div id="textures" style="display:none">
+      <span class="label">Henry VII</span>
+      &nbsp;
+      <span class="label">William the Conquerer</span>
+    </div>
+
+    <script id="simplevs" type="x-shader/x-vertex">
+      attribute vec4 Position;
+      uniform mat4 modelview;
+      uniform mat4 projection;
+      void main()
+      {
+          gl_Position = projection * modelview * Position;
+      }
+    </script>
+
+    <script id="animatedvs" type="x-shader/x-vertex">
+      attribute vec4 Position1;
+      attribute vec4 Position2;
+      uniform mat4 modelview;
+      uniform mat4 projection;
+      uniform float blend;
+      void main()
+      {
+          vec4 p = mix(Position1, Position2, blend);
+          gl_Position = projection * modelview * p;
+      }
+    </script>
+
+    <script id="grow-animated" type="x-shader/x-vertex">
+      attribute vec4 Position1;
+      attribute vec2 EdgeVector1;
+      attribute float RootDistance1;
+      attribute float AxisDistance1;
+
+      attribute vec4 Position2;
+      attribute vec2 EdgeVector2;
+      attribute float RootDistance2;
+      attribute float AxisDistance2;
+
+      uniform float time;
+      uniform mat4 modelview;
+      uniform mat4 projection;
+      uniform float width;
+      uniform float blend;
+
+      varying float u, v;
+
+      void main()
+      {
+          v = RootDistance1 * 0.05;
+          float shrink = max(0.0, 1.0 - v * (5.0 * (1.0-time)));
+          float extent = width * shrink * time;
+
+          vec2 e1 = AxisDistance1 * EdgeVector1 * extent;
+          vec2 e2 = AxisDistance2 * EdgeVector2 * extent;
+
+          vec4 p1 = Position1; p1.xy += e1;
+          vec4 p2 = Position2; p2.xy += e2;
+
+          vec4 p = mix(p1, p2, blend);
+          u = AxisDistance1 > 0.0 ? 1.0 : 0.0;
+          v = abs(AxisDistance1) * extent;
+          gl_Position = projection * modelview * p;
+      }
+    </script>
+
+    <script id="gradient" type="x-shader/x-fragment">
+      //#extension OES_standard_derivatives : enable
+      precision highp float;
+      varying float u, v;
+      uniform float alpha;
+      uniform vec3 fill;
+      uniform vec3 stroke;
+      void main()
+      {
+          float strokeWidth = 0.1 / v;
+          const float pwidth = 0.05;
+
+          float d = clamp(abs(u - 0.5) * 2.0, 0.0, 1.0);
+          vec3 color;
+          if (d < 1.0 - strokeWidth - pwidth) {
+              color = fill;
+          } else if (d < 1.0 - strokeWidth) {
+              float p = (1.0 - strokeWidth - d) / pwidth;
+              color = mix(stroke, fill, p);
+          } else {
+              color = stroke;
+          }
+          gl_FragColor = vec4(color, alpha);
+      }
+    </script>
+
+    <script id="simplefs" type="x-shader/x-fragment">
+      precision highp float;
+      uniform vec3 color;
+      uniform float alpha;
+      void main()
+      {
+          gl_FragColor = vec4(color, alpha);
+      }
+    </script>
+
+  </body>
+</html>
