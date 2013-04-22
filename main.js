@@ -8,7 +8,8 @@ var main = function() {
   });
 
   // Prevent flash of unstyled content.
-  $('.container').show();
+  $('.icon-refresh').show();
+  $('.icon-spin').hide();
   $('#textures').show();
 
   // Create some convenient aliases.
