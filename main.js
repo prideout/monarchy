@@ -227,21 +227,34 @@ var main = function() {
     }
   });
 
+  var demoHandle = null;
+
   GIZA.mousedown(function(position, modifiers) {
     if (circle.state == 'inside') {
       GIZA.toggleFullscreen();
     }
   });
 
-  var demoHandle = null;
+  var aspect = GIZA.aspect;
+
   GIZA.onFullscreenChange(function() {
     if (demoHandle) {
       $('.container').css('max-width', '800px');
+      $('canvas').css('width', 'auto');
+      $('canvas').css('height', 'auto');
+      setTimeout(GIZA.refreshSize, 500);
       gl.clearColor(0.85, 0.875, 0.9, 1);
       window.clearInterval(demoHandle);
       demoHandle = null;
     } else {
       $('.container').css('max-width', 'none');
+      $('canvas').css('width', '100%').css('height', '100%');
+      setTimeout(function() {
+        var w = GIZA.canvas.clientWidth + 'px';
+        var h = GIZA.canvas.clientWidth / aspect + 'px';
+        $('canvas').css('width', w).css('height', h);
+        setTimeout(GIZA.refreshSize, 500);
+      }, 500);
       gl.clearColor(0, 0, 0, 1);
       demoHandle = window.setInterval(generateNewTree, 5000);
     }
