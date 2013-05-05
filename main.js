@@ -156,9 +156,13 @@ var main = function() {
   // with random topology and random colors.
   var generateNewTree = function() {
     TREE.config.seed = Date.now();
+    TREE.config.spin = -Math.PI / 2;
     TREE.config.scale = 0.09;
     TREE.config.aspect = 0.5 + 0.5 * Math.random();
-    TREE.config.rootBranchCount = 1 + Math.floor(12 * Math.random());
+    TREE.config.rootBranchCount = 1 + Math.floor(15 * Math.random());
+    var density = Math.max(1, TREE.config.rootBranchCount / 7);
+    TREE.config.aspect *= density;
+    TREE.config.scale /= density;
     var r, g, b;
     var genColor = function() {
       r = Math.random();
@@ -173,9 +177,11 @@ var main = function() {
     r *= s; g *= s; b *= s;
     fill2Color = [r, g, b];
     flatness = Math.random();
+    drawCircle = true;
     var r = Math.random();
     if (r < 0.3) {
       flatness = 1.0;
+      drawCircle = false;
       circle.outline = outlineColor =
         fill2Color = circle.fill = fillColor;
     } else if (r < 0.6) {
@@ -183,7 +189,6 @@ var main = function() {
       circle.outline = outlineColor = [0,0,0];
     }
     drawCenterline = Math.random() < 0.2;
-    drawCircle = Math.random() < 0.5;
     generateTree();
     GIZA.restart();
   };
@@ -231,10 +236,14 @@ var main = function() {
   var demoHandle = null;
   GIZA.onFullscreenChange(function() {
     if (demoHandle) {
+      $('.container').css('max-width', '800px');
+      gl.clearColor(0.85, 0.875, 0.9, 1);
       window.clearInterval(demoHandle);
       demoHandle = null;
     } else {
-      demoHandle = window.setInterval(generateNewTree, 2000);
+      $('.container').css('max-width', 'none');
+      gl.clearColor(0, 0, 0, 1);
+      demoHandle = window.setInterval(generateNewTree, 5000);
     }
   });
 
