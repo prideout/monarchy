@@ -1,8 +1,9 @@
 var main = function() {
 
   // Convert markdown text to HTML.
+  // Bump the version number to invalidate the cache.
   var converter = new Showdown.converter();
-  var markdown = $.get('index.md?3', function(mdSource) {
+  var markdown = $.get('index.md?version=2', function(mdSource) {
     var html = converter.makeHtml(mdSource);
     $('#markdown-container').html(html);
   });
@@ -10,7 +11,6 @@ var main = function() {
   // Prevent flash of unstyled content.
   $('.icon-refresh').show();
   $('.icon-spin').hide();
-  $('#textures').show();
 
   // Create some convenient aliases.
   var gl = GIZA.init(null, {antialias: true});
@@ -18,6 +18,15 @@ var main = function() {
   var C4 = GIZA.Color4;
   var V2 = GIZA.Vector2;
   var V3 = GIZA.Vector3;
+
+  var drawCircle = true;
+  var drawCenterline = false;
+  var amber = [0.90, 0.85, 0.50];
+  var black = [0.10, 0.10, 0.10];
+  var fillColor = amber;
+  var outlineColor = black;
+  var flatness = 1.0;
+  var fill2Color = amber;
 
   gl.clearColor(0.85, 0.875, 0.9, 1);
   gl.clear(gl.COLOR_BUFFER_BIT);
@@ -75,7 +84,7 @@ var main = function() {
 
   var treeSpine, treeMesh;
 
-  var generate = function() {
+  var generateTree = function() {
     var config = GIZA.clone(TREE.config);
     config.curlAngle += 0.02;
     var treeDesc1 = TREE.create(config);
@@ -107,11 +116,7 @@ var main = function() {
     };
   };
 
-  generate();
-
-  $('#refresh').click(function() {
-    GIZA.restart();
-  });
+  generateTree();
 
   // Generate the circle.
   var circle = function() {
@@ -149,7 +154,8 @@ var main = function() {
     // Return a description of the circle.
     return {
       radius: 0.2,
-      color: [0.9, 0.8, 0.3],
+      fill: [0.9, 0.8, 0.3],
+      outline: [0.1, 0.1, 0.1],
       state: 'start',
       numPoints: numPoints,
       buffer: buffer,
@@ -157,9 +163,51 @@ var main = function() {
   }();
 
 
+  // Respond to the button click event by generating a new tree
+  // with random topology and random colors.
+
+  var generateNewTree = function() {
+    TREE.config.seed = Date.now();
+    TREE.config.scale = 0.09;
+    TREE.config.aspect = 0.5 + 0.5 * Math.random();
+    var r, g, b;
+    var genColor = function() {
+      r = Math.random();
+      g = Math.random();
+      b = Math.random();
+    };
+    genColor(); circle.fill = fillColor = [r, g, b];
+    var s = 0.5 + Math.random();
+    r *= s; g *= s; b *= s;
+    circle.outline = outlineColor = [r, g, b];
+    var s = 0.5 + Math.random();
+    r *= s; g *= s; b *= s;
+    fill2Color = [r, g, b];
+    flatness = Math.random();
+    var r = Math.random();
+    if (r < 0.3) {
+      flatness = 1.0;
+      circle.outline = outlineColor =
+        fill2Color = circle.fill = fillColor;
+    } else if (r < 0.6) {
+      flatness = 0.0;
+      circle.outline = outlineColor = [0,0,0];
+    }
+    drawCenterline = Math.random() < 0.2;
+    drawCircle = Math.random() < 0.5;
+    generateTree();
+    GIZA.restart();
+  };
+
+  $('#refresh').click(function(e) {
+    generateNewTree();
+    if (e.shiftKey) {
+      window.setInterval(generateNewTree, 2000);
+      $(this).hide();
+    }
+  });
+
   // Perform various initialization.
-  gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-  //gl.enable(gl.BLEND);
 
   var hw = GIZA.aspect, hh = 1, hd = 10;
   var proj = M4.orthographic(-hw, hw, -hh, +hh, -hd, hd);
@@ -187,10 +235,8 @@ var main = function() {
     var p = screenToWorld(position);
     var r = circle.radius;
     if (p[0] * p[0] + p[1] * p[1] < r * r) {
-      circle.color = [1, 1, 0];
       circle.state = 'inside';
     } else {
-      circle.color = [0.9, 0.8, 0.3];
       circle.state = 'outside';
     }
   });
@@ -243,13 +289,11 @@ var main = function() {
       var mv = M4.scale(TREE.config.scale);
       mv = M4.rotateZ(mv, TREE.config.spin);
       gl.uniformMatrix4fv(program.modelview, false, mv);
-
-      var amber = [0.90, 0.85, 0.50];
-      var black = [0.10, 0.10, 0.10];
-
-      gl.uniform3fv(program.fill, amber);
-      gl.uniform3fv(program.stroke, black);
+      gl.uniform3fv(program.fill, fillColor);
+      gl.uniform3fv(program.fill2, fill2Color);
+      gl.uniform3fv(program.stroke, outlineColor);
       gl.uniform1f(program.width, 2);
+      gl.uniform1f(program.flatness, flatness);
       var offset = 0;
       treeMesh.spans.forEach(function(span) {
         gl.drawArrays(gl.TRIANGLE_STRIP, offset, span);
@@ -265,7 +309,6 @@ var main = function() {
       gl.disableVertexAttribArray(attribs.AXIS_DISTANCE2);
     }
 
-    var drawCenterline = false;
     if (drawCenterline) {
 
       program = programs.animatedSpine;
@@ -287,9 +330,8 @@ var main = function() {
       mv = M4.rotateZ(mv, TREE.config.spin);
       gl.uniformMatrix4fv(program.modelview, false, mv);
 
-      var red = [0.5, 0, 0];
       gl.uniform1f(program.alpha, 0.5);
-      gl.uniform3fv(program.color, red);
+      gl.uniform3fv(program.color, outlineColor);
 
       var offset = 0;
       treeSpine.spans.forEach(function(span) {
@@ -300,7 +342,6 @@ var main = function() {
       gl.disableVertexAttribArray(attribs.POSITION2);
     }
 
-    var drawCircle = true;
     if (drawCircle) {
       var program = programs.simple;
       gl.useProgram(program);
@@ -312,13 +353,13 @@ var main = function() {
       var s = circle.radius + 0.01 * Math.sin(time * 0.01);
       var mv = M4.scale(s);
       gl.uniformMatrix4fv(program.modelview, false, mv);
-      gl.uniform3f(program.color, 0.1, 0.1, 0.1);
+      gl.uniform3fv(program.color, circle.outline);
       gl.drawArrays(gl.TRIANGLE_FAN, 0, circle.numPoints);
 
       // Draw the yellow fill.
-      var mv = M4.scale(s - 0.025);
+      var mv = M4.scale(s - 0.0125);
       gl.uniformMatrix4fv(program.modelview, false, mv);
-      gl.uniform3fv(program.color, circle.color);
+      gl.uniform3fv(program.color, circle.fill);
       gl.drawArrays(gl.TRIANGLE_FAN, 0, circle.numPoints);
     }
 

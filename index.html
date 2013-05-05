@@ -95,12 +95,14 @@
     </script>
 
     <script id="gradient" type="x-shader/x-fragment">
-      //#extension OES_standard_derivatives : enable
       precision highp float;
       varying float u, v;
       uniform float alpha;
       uniform vec3 fill;
+      uniform vec3 fill2;
       uniform vec3 stroke;
+      uniform float flatness;
+
       void main()
       {
           float strokeWidth = 0.1 / v;
@@ -109,7 +111,7 @@
           float d = clamp(abs(u - 0.5) * 2.0, 0.0, 1.0);
           vec3 color;
           if (d < 1.0 - strokeWidth - pwidth) {
-              color = fill;
+              color = mix(fill2, fill, mix(d, 1.0, flatness));
           } else if (d < 1.0 - strokeWidth) {
               float p = (1.0 - strokeWidth - d) / pwidth;
               color = mix(stroke, fill, p);
