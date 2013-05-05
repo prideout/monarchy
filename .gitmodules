@@ -1,3 +1,0 @@
-[submodule "lib/giza"]
-	path = lib/giza
-	url = https://github.com/prideout/giza.git
