@@ -22,6 +22,7 @@
     gizapath + "Path.js",
     gizapath + "Mouse.js",
     gizapath + "Turntable.js",
+    gizapath + "Fullscreen.js",
     'config.js',
     'create.js',
     'centerline.js',

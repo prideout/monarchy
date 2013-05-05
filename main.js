@@ -3,7 +3,7 @@ var main = function() {
   // Convert markdown text to HTML.
   // Bump the version number to invalidate the cache.
   var converter = new Showdown.converter();
-  var markdown = $.get('index.md?version=2', function(mdSource) {
+  var markdown = $.get('index.md?version=3', function(mdSource) {
     var html = converter.makeHtml(mdSource);
     $('#markdown-container').html(html);
   });
@@ -201,10 +201,6 @@ var main = function() {
 
   $('#refresh').click(function(e) {
     generateNewTree();
-    if (e.shiftKey) {
-      window.setInterval(generateNewTree, 2000);
-      $(this).hide();
-    }
   });
 
   // Perform various initialization.
@@ -238,6 +234,22 @@ var main = function() {
       circle.state = 'inside';
     } else {
       circle.state = 'outside';
+    }
+  });
+
+  GIZA.mousedown(function(position, modifiers) {
+    if (circle.state == 'inside') {
+      GIZA.toggleFullscreen();
+    }
+  });
+
+  var demoHandle = null;
+  GIZA.onFullscreenChange(function() {
+    if (demoHandle) {
+      window.clearInterval(demoHandle);
+      demoHandle = null;
+    } else {
+      demoHandle = window.setInterval(generateNewTree, 2000);
     }
   });
 
@@ -349,17 +361,23 @@ var main = function() {
       gl.enableVertexAttribArray(attribs.POSITION);
       gl.vertexAttribPointer(attribs.POSITION, 2, gl.FLOAT, false, 0, 0);
 
-      // Draw the gray border.
+      // Draw the border.
       var s = circle.radius + 0.01 * Math.sin(time * 0.01);
       var mv = M4.scale(s);
       gl.uniformMatrix4fv(program.modelview, false, mv);
       gl.uniform3fv(program.color, circle.outline);
       gl.drawArrays(gl.TRIANGLE_FAN, 0, circle.numPoints);
 
-      // Draw the yellow fill.
+      // Determine the fill color.
+      var color = circle.fill;
+      if (circle.state == 'inside') {
+        color = V3.scaled(circle.fill, 1.2);
+      }
+
+      // Draw the fill.
       var mv = M4.scale(s - 0.0125);
       gl.uniformMatrix4fv(program.modelview, false, mv);
-      gl.uniform3fv(program.color, circle.fill);
+      gl.uniform3fv(program.color, color);
       gl.drawArrays(gl.TRIANGLE_FAN, 0, circle.numPoints);
     }
 
