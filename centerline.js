@@ -1,4 +1,3 @@
-
 TREE.centerline = function(tree) {
 
   var branches = tree.branches;
@@ -30,5 +29,4 @@ TREE.centerline = function(tree) {
     data: vertexArray,
     spans: spans,
   };
-
 };

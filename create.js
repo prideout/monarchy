@@ -1,5 +1,14 @@
-// A tree is a flat list of branches.
+// Here we generate a "tree", represented by a flat list of branches.
 // Each element of a branch is [[x, y], width]
+//
+// The client converts this into triangle strips with [x, y, d1, d2, ux, uy]
+// - (x, y) is the centerline point
+// - d1 is distance from branch bud
+// - d2 is distance from tree root
+// - (ux, uy) is the vector from centerline to edge
+//
+// We actually create two trees to simulate wind sway.
+// The vertex shader blends the two shapes to achieve animation.
 //
 // Naming convention: almost all variables in this file end in one of:
 //     Angle, Position, Count, Width, Fraction

@@ -8,10 +8,6 @@ var main = function() {
     $('#markdown-container').html(html);
   });
 
-  // Prevent flash of unstyled content.
-  $('.icon-refresh').show();
-  $('.icon-spin').hide();
-
   // Create some convenient aliases.
   var gl = GIZA.init(null, {antialias: true});
   var M4 = GIZA.Matrix4;
@@ -19,6 +15,13 @@ var main = function() {
   var V2 = GIZA.Vector2;
   var V3 = GIZA.Vector3;
 
+  // Prevent flash of unstyled content.
+  $('.icon-refresh').show();
+  $('.icon-spin').hide();
+  gl.clearColor(0.85, 0.875, 0.9, 1);
+  gl.clear(gl.COLOR_BUFFER_BIT);
+
+  // Some global configuration.
   var drawCircle = true;
   var drawCenterline = false;
   var amber = [0.90, 0.85, 0.50];
@@ -27,12 +30,10 @@ var main = function() {
   var outlineColor = black;
   var flatness = 1.0;
   var fill2Color = amber;
-
-  gl.clearColor(0.85, 0.875, 0.9, 1);
-  gl.clear(gl.COLOR_BUFFER_BIT);
+  var hw = GIZA.aspect, hh = 1, hd = 10;
+  var proj = M4.orthographic(-hw, hw, -hh, +hh, -hd, hd);
 
   // Build the GLSL shader objects.
-
   var attribs = {
     POSITION: 0,
     ROOT_DISTANCE: 1,
@@ -43,9 +44,7 @@ var main = function() {
     EDGE_VECTOR2: 6,
     AXIS_DISTANCE2: 7,
   };
-
   var programs = GIZA.compile({
-
     simple: {
       vs: ['simplevs'],
       fs: ['simplefs'],
@@ -53,7 +52,6 @@ var main = function() {
         Position: attribs.POSITION,
       }
     },
-
     animatedSpine: {
       vs: ['animatedvs'],
       fs: ['simplefs'],
@@ -62,7 +60,6 @@ var main = function() {
         Position2: attribs.POSITION2,
       }
     },
-
     animatedMesh: {
       vs: ['grow-animated'],
       fs: ['gradient'],
@@ -77,13 +74,10 @@ var main = function() {
         AxisDistance2: attribs.AXIS_DISTANCE2,
       }
     },
-
   });
 
   // Generate the tree.
-
   var treeSpine, treeMesh;
-
   var generateTree = function() {
     var config = GIZA.clone(TREE.config);
     config.curlAngle += 0.02;
@@ -94,18 +88,14 @@ var main = function() {
     var treeDesc2 = TREE.create(config);
     var treeSpine2 = TREE.centerline(treeDesc2);
     var treeMesh2 = TREE.meshify(treeDesc2);
-
     var animatedMesh = GIZA.interleaveBuffers([treeMesh1.data, treeMesh2.data], 24);
     var animatedSpine = GIZA.interleaveBuffers([treeSpine1.data, treeSpine2.data], 8);
-
     var meshBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, meshBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, animatedMesh, gl.STATIC_DRAW);
-  
     var spineBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, spineBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, animatedSpine, gl.STATIC_DRAW);
-
     treeSpine = {
       spans: treeSpine1.spans,
       buffer: spineBuffer
@@ -115,10 +105,9 @@ var main = function() {
       buffer: meshBuffer
     };
   };
-
   generateTree();
 
-  // Generate the circle.
+  // Generate the circle VBO.
   var circle = function() {
 
     // Set up a description of the vertex format.
@@ -163,9 +152,8 @@ var main = function() {
   }();
 
 
-  // Respond to the button click event by generating a new tree
+  // Respond to the click event by generating a new tree
   // with random topology and random colors.
-
   var generateNewTree = function() {
     TREE.config.seed = Date.now();
     TREE.config.scale = 0.09;
@@ -198,15 +186,11 @@ var main = function() {
     generateTree();
     GIZA.restart();
   };
-
   $('#refresh').click(function(e) {
     generateNewTree();
   });
 
   // Perform various initialization.
-
-  var hw = GIZA.aspect, hh = 1, hd = 10;
-  var proj = M4.orthographic(-hw, hw, -hh, +hh, -hd, hd);
 
   var screenToWorld = function(p) {
     var size = [GIZA.canvas.width, GIZA.canvas.height];
@@ -322,35 +306,27 @@ var main = function() {
     }
 
     if (drawCenterline) {
-
       program = programs.animatedSpine;
       gl.useProgram(program);
       gl.uniformMatrix4fv(program.projection, false, proj);
       gl.uniform1f(program.alpha, 1.0);
       gl.uniform1f(program.blend, blend);
-
       gl.lineWidth(4.0);
       gl.bindBuffer(gl.ARRAY_BUFFER, treeSpine.buffer);
-
       gl.enableVertexAttribArray(attribs.POSITION);
       gl.vertexAttribPointer(attribs.POSITION, 2, gl.FLOAT, false, 16, 0);
-
       gl.enableVertexAttribArray(attribs.POSITION2);
       gl.vertexAttribPointer(attribs.POSITION2, 2, gl.FLOAT, false, 16, 8);
-
       var mv = M4.scale(TREE.config.scale);
       mv = M4.rotateZ(mv, TREE.config.spin);
       gl.uniformMatrix4fv(program.modelview, false, mv);
-
       gl.uniform1f(program.alpha, 0.5);
       gl.uniform3fv(program.color, outlineColor);
-
       var offset = 0;
       treeSpine.spans.forEach(function(span) {
         gl.drawArrays(gl.LINE_STRIP, offset, span);
         offset += span;
       });
-
       gl.disableVertexAttribArray(attribs.POSITION2);
     }
 
@@ -385,7 +361,7 @@ var main = function() {
 
   GIZA.drawHooks.push(TWEEN.update);
 
-  // We pause and reset the time so that users don't miss the first
+  // Pause and reset giza's clock so that users don't miss the first
   // few hundred milliseconds of animation.
   GIZA.pause();
   GIZA.animate(draw);
