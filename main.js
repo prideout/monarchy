@@ -158,6 +158,7 @@ var main = function() {
     TREE.config.seed = Date.now();
     TREE.config.scale = 0.09;
     TREE.config.aspect = 0.5 + 0.5 * Math.random();
+    TREE.config.rootBranchCount = 1 + Math.floor(12 * Math.random());
     var r, g, b;
     var genColor = function() {
       r = Math.random();
