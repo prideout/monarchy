@@ -15,6 +15,8 @@ var main = function() {
   var V2 = GIZA.Vector2;
   var V3 = GIZA.Vector3;
 
+  var hasDerivatives = gl.getExtension('OES_standard_derivatives');
+
   // Prevent flash of unstyled content.
   gl.clearColor(0.85, 0.875, 0.9, 1);
   gl.clear(gl.COLOR_BUFFER_BIT);
@@ -60,7 +62,7 @@ var main = function() {
     },
     animatedMesh: {
       vs: ['grow-animated'],
-      fs: ['gradient'],
+      fs: [hasDerivatives ? 'gradient-derivatives' : 'gradient'],
       attribs: {
         Position1: attribs.POSITION,
         EdgeVector1: attribs.EDGE_VECTOR,

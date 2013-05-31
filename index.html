@@ -14,9 +14,7 @@
   <body>
 
     <div class="container">
-      <h1>
-        monarchy
-      </h1>
+      <h1>monarchy</h1>
       
       <div id="pattern" class="pattern">
         <canvas width="1920" height="960" class="landscape" />
@@ -89,6 +87,36 @@
           u = AxisDistance1 > 0.0 ? 1.0 : 0.0;
           v = abs(AxisDistance1) * extent;
           gl_Position = projection * modelview * p;
+      }
+    </script>
+
+    <script id="gradient-derivatives" type="x-shader/x-fragment">
+      #extension GL_OES_standard_derivatives : enable
+
+      precision highp float;
+      varying float u, v;
+      uniform float alpha;
+      uniform vec3 fill;
+      uniform vec3 fill2;
+      uniform vec3 stroke;
+      uniform float flatness;
+
+      void main()
+      {
+          float strokeWidth = 0.1 / v;
+          float pwidth = fwidth(u);
+
+          float d = clamp(abs(u - 0.5) * 2.0, 0.0, 1.0);
+          vec3 color;
+          if (d < 1.0 - strokeWidth - pwidth) {
+              color = mix(fill2, fill, mix(d, 1.0, flatness));
+          } else if (d < 1.0 - strokeWidth) {
+              float p = (1.0 - strokeWidth - d) / pwidth;
+              color = mix(stroke, fill, p);
+          } else {
+              color = stroke;
+          }
+          gl_FragColor = vec4(color, alpha);
       }
     </script>
 
