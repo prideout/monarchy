@@ -181,7 +181,6 @@ var main = function() {
     var r = Math.random();
     if (r < 0.3) {
       flatness = 1.0;
-      drawCircle = false;
       circle.outline = outlineColor =
         fill2Color = circle.fill = fillColor;
     } else if (r < 0.6) {
