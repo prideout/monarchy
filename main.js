@@ -16,8 +16,6 @@ var main = function() {
   var V3 = GIZA.Vector3;
 
   // Prevent flash of unstyled content.
-  $('.icon-refresh').show();
-  $('.icon-spin').hide();
   gl.clearColor(0.85, 0.875, 0.9, 1);
   gl.clear(gl.COLOR_BUFFER_BIT);
 
@@ -192,9 +190,6 @@ var main = function() {
     generateTree();
     GIZA.restart();
   };
-  $('#refresh').click(function(e) {
-    generateNewTree();
-  });
 
   // Perform various initialization.
 
@@ -231,7 +226,7 @@ var main = function() {
 
   GIZA.mousedown(function(position, modifiers) {
     if (circle.state == 'inside') {
-      GIZA.toggleFullscreen();
+      generateNewTree();
     }
   });
 
