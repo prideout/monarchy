@@ -1,6 +1,6 @@
 (function() {
 
-  var jqrypath = "http://ajax.googleapis.com/ajax/libs/";
+  var jqrypath = "https://ajax.googleapis.com/ajax/libs/";
 
   var scripts = [
     "lib/showdown.js",
